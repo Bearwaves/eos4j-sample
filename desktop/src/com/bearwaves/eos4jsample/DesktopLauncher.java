@@ -16,6 +16,8 @@ public class DesktopLauncher {
             throw new RuntimeException("Couldn't load EOS libraries");
         }
 
-        new Lwjgl3Application(new GdxGame(), config);
+        PlatformManager epicPlatform = new EpicPlatformManager();
+
+        new Lwjgl3Application(new GdxGame(epicPlatform), config);
     }
 }
