@@ -1,6 +1,4 @@
 buildscript {
-    
-
     repositories {
         mavenLocal()
         mavenCentral()
@@ -9,23 +7,16 @@ buildscript {
         google()
     }
     dependencies {
-        
-
     }
 }
 
 allprojects {
     apply plugin: "eclipse"
 
-    version = '1.0'
+    version = '1.1.0'
     ext {
         appName = "eos4j Sample"
         gdxVersion = '1.12.0'
-        roboVMVersion = '2.3.20'
-        box2DLightsVersion = '1.5'
-        ashleyVersion = '1.7.4'
-        aiVersion = '1.8.2'
-        gdxControllersVersion = '2.2.1'
     }
 
     repositories {
@@ -35,6 +26,7 @@ allprojects {
         gradlePluginPortal()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://jitpack.io" }
     }
 }
@@ -42,21 +34,18 @@ allprojects {
 project(":desktop") {
     apply plugin: "java-library"
 
-
     dependencies {
         implementation project(":core")
         api "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
-        
+        implementation "com.bearwaves:eos4j:1.1.0-SNAPSHOT"
     }
 }
 
 project(":core") {
     apply plugin: "java-library"
 
-
     dependencies {
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
-        
     }
 }
