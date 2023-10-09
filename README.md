@@ -24,7 +24,7 @@ these values.
 ### SDK setup
 
 For legal reasons eos4j does not include the EOS SDK itself; you'll need to
-provide that. Copy the `SDK/` directory provided by Epic into `desktop/EOS/SDK`.
+provide that. Copy the `SDK/` directory provided by Epic to `desktop/EOS/SDK`.
 
 ### Dev Auth
 
