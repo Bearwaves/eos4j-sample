@@ -40,5 +40,9 @@ The sample app uses Gradle as its build system, and includes a Gradle wrapper
 for your convenience. To run the app, simply execute:
 
 ```sh
-./gradlew[.bat] desktop:run
+# Linux / macOS
+./gradlew desktop:run
+
+# Windows
+gradlew.bat desktop:run
 ```
