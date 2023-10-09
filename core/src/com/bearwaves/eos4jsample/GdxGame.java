@@ -1,14 +1,12 @@
 package com.bearwaves.eos4jsample;
 
 import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.bearwaves.eos4jsample.ui.BaseScreen;
 
 public class GdxGame extends ApplicationAdapter {
     private final PlatformManager platform;
-    private SpriteBatch batch;
-    private Texture img;
+    private BaseScreen baseScreen;
 
     public GdxGame(PlatformManager platform) {
         this.platform = platform;
@@ -16,27 +14,26 @@ public class GdxGame extends ApplicationAdapter {
 
     @Override
     public void create() {
-        batch = new SpriteBatch();
-        img = new Texture("badlogic.jpg");
-
         platform.init();
+        baseScreen = new BaseScreen(this);
     }
 
     @Override
     public void render() {
         platform.tick();
 
-        ScreenUtils.clear(1, 0, 0, 1);
-        batch.begin();
-        batch.draw(img, 0, 0);
-        batch.end();
+        ScreenUtils.clear(0, 0, 0, 1);
+        baseScreen.render();
     }
 
     @Override
     public void dispose() {
-        batch.dispose();
-        img.dispose();
-
         platform.dispose();
+        baseScreen.dispose();
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        baseScreen.resize(width, height);
     }
 }
