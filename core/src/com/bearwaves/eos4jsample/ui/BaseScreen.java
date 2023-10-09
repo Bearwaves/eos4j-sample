@@ -15,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.bearwaves.eos4jsample.GdxGame;
+import com.bearwaves.eos4jsample.LoginState;
 
 public class BaseScreen {
 
@@ -23,11 +24,13 @@ public class BaseScreen {
     private final SpriteBatch batch;
     private final Table content;
     private final Label loadingLabel;
+    private LoginState loginState;
 
     public BaseScreen(GdxGame game) {
         this.game = game;
         this.batch = new SpriteBatch();
         this.stage = new Stage(new ScreenViewport(), this.batch);
+        this.loginState = LoginState.NOT_LOGGED_IN;
         Gdx.app.getInput().setInputProcessor(this.stage);
 
         Table table = new Table();
@@ -46,10 +49,14 @@ public class BaseScreen {
         this.loadingLabel = new Label("Starting up...", skin);
         this.loadingLabel.setAlignment(Align.center);
         content.add(this.loadingLabel).grow();
-        content.setDebug(true);
     }
 
     public void render() {
+        LoginState newLoginState = game.getPlatform().getLoginState();
+        if (newLoginState != loginState) {
+            loginState = newLoginState;
+            handleNewLoginState(loginState);
+        }
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
     }
@@ -84,6 +91,23 @@ public class BaseScreen {
         skin.add("default", labelStyle);
 
         return skin;
+    }
+
+    private void handleNewLoginState(LoginState loginState) {
+        switch (loginState) {
+            case LOGGING_IN_EPIC:
+                this.loadingLabel.setText("Logging in to Epic Auth...");
+                break;
+            case LOGGING_IN_CONNECT:
+                this.loadingLabel.setText("Logging in to Epic Online Services...");
+                break;
+            case FAILED:
+                this.loadingLabel.setText("Login failed; see logs for details.");
+                break;
+            case LOGGED_IN:
+                this.loadingLabel.setText("Logged in.");
+                break;
+        }
     }
 
 }

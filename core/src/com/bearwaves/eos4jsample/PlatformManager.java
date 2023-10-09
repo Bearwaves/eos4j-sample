@@ -6,4 +6,6 @@ public interface PlatformManager {
     void tick();
 
     void dispose();
+
+    LoginState getLoginState();
 }

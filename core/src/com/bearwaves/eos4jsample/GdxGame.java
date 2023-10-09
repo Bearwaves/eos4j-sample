@@ -36,4 +36,8 @@ public class GdxGame extends ApplicationAdapter {
     public void resize(int width, int height) {
         baseScreen.resize(width, height);
     }
+
+    public PlatformManager getPlatform() {
+        return platform;
+    }
 }
