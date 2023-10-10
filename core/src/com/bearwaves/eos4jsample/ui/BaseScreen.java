@@ -7,12 +7,12 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Value;
-import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.bearwaves.eos4jsample.GdxGame;
 import com.bearwaves.eos4jsample.LoginState;
@@ -22,8 +22,8 @@ public class BaseScreen {
     private final GdxGame game;
     private final Stage stage;
     private final SpriteBatch batch;
-    private final Table content;
-    private final Label loadingLabel;
+    private final Container<ContentScreen> content;
+    private final AuthScreen authScreen;
     private LoginState loginState;
 
     public BaseScreen(GdxGame game) {
@@ -43,12 +43,12 @@ public class BaseScreen {
         table.row();
         tabRow.defaults().space(Value.percentHeight(0.5f));
 
-        this.content = new Table();
-        table.add(content).grow();
+        tabRow.add(new TextButton("Auth", skin));
+        this.authScreen = new AuthScreen(game, skin);
 
-        this.loadingLabel = new Label("Starting up...", skin);
-        this.loadingLabel.setAlignment(Align.center);
-        content.add(this.loadingLabel).grow();
+        this.content = new Container<>();
+        table.add(content).grow();
+        this.content.setActor(this.authScreen);
     }
 
     public void render() {
@@ -94,20 +94,12 @@ public class BaseScreen {
     }
 
     private void handleNewLoginState(LoginState loginState) {
-        switch (loginState) {
-            case LOGGING_IN_EPIC:
-                this.loadingLabel.setText("Logging in to Epic Auth...");
-                break;
-            case LOGGING_IN_CONNECT:
-                this.loadingLabel.setText("Logging in to Epic Online Services...");
-                break;
-            case FAILED:
-                this.loadingLabel.setText("Login failed; see logs for details.");
-                break;
-            case LOGGED_IN:
-                this.loadingLabel.setText("Logged in.");
-                break;
-        }
+        authScreen.handleNewLoginState(loginState);
+        populateTabRow(loginState);
+    }
+
+    private void populateTabRow(LoginState loginState) {
+
     }
 
 }
