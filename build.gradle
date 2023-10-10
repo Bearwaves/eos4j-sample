@@ -13,7 +13,7 @@ buildscript {
 allprojects {
     apply plugin: "eclipse"
 
-    version = '1.0.0'
+    version = '1.1.0-SNAPSHOT'
     ext {
         appName = "eos4j Sample"
         gdxVersion = '1.12.0'
@@ -38,7 +38,7 @@ project(":desktop") {
         implementation project(":core")
         api "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
-        implementation "com.bearwaves:eos4j:1.0.0"
+        implementation "com.bearwaves:eos4j:1.1.0-SNAPSHOT"
     }
 }
 
