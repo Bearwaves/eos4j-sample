@@ -24,6 +24,7 @@ public class StatsScreen extends ContentScreen {
         align(Align.topLeft);
         Table inputRow = new Table();
         inputRow.align(Align.left);
+        inputRow.defaults().space(Value.percentHeight(0.5f));
         TextField nameField = new TextField("", skin);
         nameField.setMessageText("Stat name");
         TextField valueField = new TextField("", skin);
