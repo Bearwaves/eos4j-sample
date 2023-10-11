@@ -10,6 +10,9 @@ import com.bearwaves.eos4j.EOSLogging;
 import com.bearwaves.eos4j.EOSPlatform;
 import com.bearwaves.eos4j.EOSResultCode;
 import com.bearwaves.eos4j.EOSStats;
+import com.bearwaves.eos4jsample.stats.IngestStatCallback;
+import com.bearwaves.eos4jsample.stats.Stat;
+import com.bearwaves.eos4jsample.stats.GetStatsCallback;
 
 public class EpicPlatformManager implements PlatformManager {
 
@@ -21,6 +24,7 @@ public class EpicPlatformManager implements PlatformManager {
     private EOSAchievements eosAchievements;
     private EOSAuth.IdToken idToken;
     private EOSConnect.IdToken connectToken;
+    private EOS.ProductUserId localUserId;
 
     EpicPlatformManager() {
         this.loginState = LoginState.NOT_LOGGED_IN;
@@ -101,6 +105,56 @@ public class EpicPlatformManager implements PlatformManager {
         return this.loginState;
     }
 
+    @Override
+    public void getStats(GetStatsCallback callback) {
+        this.eosStats.queryStats(
+                new EOSStats.QueryStatsOptions(this.localUserId, null, null, null, this.localUserId),
+                result -> {
+                    try {
+                        EOS.throwIfErrorCode(result.resultCode);
+                    } catch (EOSException e) {
+                        Gdx.app.error("EpicPlatformManager", "Failed to query stats", e);
+                        callback.run(null);
+                        return;
+                    }
+                    int statsCount = eosStats.getStatsCount(localUserId);
+                    Stat[] stats = new Stat[statsCount];
+                    for (int i = 0; i < statsCount; i++) {
+                        try {
+                            EOSStats.Stat stat = eosStats.copyStatByIndex(new EOSStats.CopyStatByIndexOptions(localUserId, i));
+                            stats[i] = new Stat(stat.name, stat.value);
+                            stat.release();
+                        } catch (EOSException e) {
+                            Gdx.app.error("EpicPlatformManager", "Failed to copy stat", e);
+                            callback.run(null);
+                            return;
+                        }
+                    }
+                    callback.run(new GetStatsCallback.Result(stats));
+                }
+        );
+    }
+
+    @Override
+    public void ingestStat(Stat stat, IngestStatCallback callback) {
+        this.eosStats.ingestStat(
+                new EOSStats.IngestStatOptions(
+                        localUserId,
+                        localUserId,
+                        new EOSStats.IngestData[]{new EOSStats.IngestData(stat.name, stat.value)}
+                ),
+                result -> {
+                    try {
+                        EOS.throwIfErrorCode(result.resultCode);
+                        callback.run(true);
+                    } catch (EOSException e) {
+                        Gdx.app.error("EpicPlatformManager", "Failed to ingest stat", e);
+                        callback.run(false);
+                    }
+                }
+        );
+    }
+
     private void doEpicAuthLogin() {
         loginState = LoginState.LOGGING_IN_EPIC;
         eosAuth.login(
@@ -167,7 +221,8 @@ public class EpicPlatformManager implements PlatformManager {
             return;
         }
         Gdx.app.log("EpicPlatformManager", "EOS Connect successful");
-        loginState = LoginState.LOGGED_IN;
+        this.loginState = LoginState.LOGGED_IN;
+        this.localUserId = localUserId;
         eosConnect.addNotifyAuthExpiration(data -> {
             Gdx.app.log("EpicPlatformManager", "Connect token expired; refreshing");
             doEOSConnectLogin();
