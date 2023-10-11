@@ -34,6 +34,15 @@ https://dev.epicgames.com/docs/epic-account-services/developer-authentication-to
 ) provided in the SDK. You should run it on `localhost:1234`,
 with the credential name `eos4j`.
 
+### Stats, achievements, etc.
+
+To use the stats, achievements, leaderboards and so on, you'll need to set these
+up in your EOS developer portal. The sample is built in such a way that you can
+use whatever values for these you like; if you want something quick, Epic
+provide a [template](
+https://dev.epicgames.com/docs/epic-games-store/services/epic-achievements/achievements-setup#method-2-download-the-epic-games-store-achievements-template
+).
+
 ## Build and run
 
 The sample app uses Gradle as its build system, and includes a Gradle wrapper
