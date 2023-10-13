@@ -1,5 +1,6 @@
 package com.bearwaves.eos4jsample.ui;
 
+import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Align;
@@ -10,8 +11,8 @@ public class AuthScreen extends ContentScreen {
 
     private final Label loadingLabel;
 
-    public AuthScreen(GdxGame game, Skin skin) {
-        super(game, skin, "Auth");
+    public AuthScreen(GdxGame game, Container<ContentScreen> container, Skin skin) {
+        super(game, container, skin, "Auth");
         this.loadingLabel = new Label("Starting up...", skin);
         this.loadingLabel.setAlignment(Align.center);
         this.add(this.loadingLabel).grow();

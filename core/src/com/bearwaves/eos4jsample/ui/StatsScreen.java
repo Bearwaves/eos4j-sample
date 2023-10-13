@@ -2,6 +2,7 @@ package com.bearwaves.eos4jsample.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -18,8 +19,8 @@ public class StatsScreen extends ContentScreen {
 
     private final Label statsLabel;
 
-    public StatsScreen(GdxGame game, Skin skin) {
-        super(game, skin, "Stats");
+    public StatsScreen(GdxGame game, Container<ContentScreen> container, Skin skin) {
+        super(game, container, skin, "Stats");
 
         align(Align.topLeft);
         Table inputRow = new Table();
