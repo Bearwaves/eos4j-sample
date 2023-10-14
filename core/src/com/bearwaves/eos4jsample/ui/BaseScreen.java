@@ -29,6 +29,7 @@ public class BaseScreen {
     // Screens
     private final AuthScreen authScreen;
     private final StatsScreen statsScreen;
+    private final LeaderboardsScreen leaderboardsScreen;
     private LoginState loginState;
 
     public BaseScreen(GdxGame game) {
@@ -54,6 +55,7 @@ public class BaseScreen {
 
         this.authScreen = new AuthScreen(game, content, skin);
         this.statsScreen = new StatsScreen(game, content, skin);
+        this.leaderboardsScreen = new LeaderboardsScreen(game, content, skin);
 
         content.setActor(this.authScreen);
         tabRow.add(this.authScreen.getButton());
@@ -113,6 +115,7 @@ public class BaseScreen {
     private void handleNewLoginState(LoginState loginState) {
         authScreen.handleNewLoginState(loginState);
         statsScreen.handleNewLoginState(loginState);
+        leaderboardsScreen.handleNewLoginState(loginState);
         populateTabRow(loginState);
     }
 
@@ -122,7 +125,8 @@ public class BaseScreen {
 
         if (loginState == LoginState.LOGGED_IN) {
             this.tabRow.add(
-                    this.statsScreen.getButton()
+                    this.statsScreen.getButton(),
+                    this.leaderboardsScreen.getButton()
             );
         }
     }

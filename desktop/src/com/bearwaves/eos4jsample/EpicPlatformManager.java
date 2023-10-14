@@ -6,10 +6,13 @@ import com.bearwaves.eos4j.EOSAchievements;
 import com.bearwaves.eos4j.EOSAuth;
 import com.bearwaves.eos4j.EOSConnect;
 import com.bearwaves.eos4j.EOSException;
+import com.bearwaves.eos4j.EOSLeaderboards;
 import com.bearwaves.eos4j.EOSLogging;
 import com.bearwaves.eos4j.EOSPlatform;
 import com.bearwaves.eos4j.EOSResultCode;
 import com.bearwaves.eos4j.EOSStats;
+import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardDefinitionsCallback;
+import com.bearwaves.eos4jsample.leaderboards.LeaderboardDefinition;
 import com.bearwaves.eos4jsample.stats.IngestStatCallback;
 import com.bearwaves.eos4jsample.stats.Stat;
 import com.bearwaves.eos4jsample.stats.GetStatsCallback;
@@ -21,6 +24,7 @@ public class EpicPlatformManager implements PlatformManager {
     private EOSConnect eosConnect;
     private EOSAuth eosAuth;
     private EOSStats eosStats;
+    private EOSLeaderboards eosLeaderboards;
     private EOSAchievements eosAchievements;
     private EOSAuth.IdToken idToken;
     private EOSConnect.IdToken connectToken;
@@ -155,6 +159,36 @@ public class EpicPlatformManager implements PlatformManager {
         );
     }
 
+    @Override
+    public void getLeaderboardDefinitions(GetLeaderboardDefinitionsCallback callback) {
+        eosLeaderboards.queryLeaderboardDefinitions(
+                new EOSLeaderboards.QueryLeaderboardDefinitionsOptions(localUserId, null, null),
+                result -> {
+                    try {
+                        EOS.throwIfErrorCode(result.resultCode);
+                    } catch (EOSException e) {
+                        Gdx.app.error("EpicPlatformManager", "Failed to query LB definitions", e);
+                        callback.run(null);
+                        return;
+                    }
+                    int defsCount = eosLeaderboards.getLeaderboardDefinitionCount();
+                    LeaderboardDefinition[] defs = new LeaderboardDefinition[defsCount];
+                    for (int i = 0; i < defsCount; i++) {
+                        try {
+                            EOSLeaderboards.LeaderboardDefinition def = eosLeaderboards.copyLeaderboardDefinitionByIndex(new EOSLeaderboards.CopyLeaderboardDefinitionByIndexOptions(i));
+                            defs[i] = new LeaderboardDefinition(def.leaderboardId, def.statName, LeaderboardDefinition.Aggregation.values()[def.aggregation.ordinal()], def.startTime, def.endTime);
+                            def.release();
+                        } catch (EOSException e) {
+                            Gdx.app.error("EpicPlatformManager", "Failed to copy LB definition", e);
+                            callback.run(null);
+                            return;
+                        }
+                    }
+                    callback.run(new GetLeaderboardDefinitionsCallback.Result(defs));
+                }
+        );
+    }
+
     private void doEpicAuthLogin() {
         loginState = LoginState.LOGGING_IN_EPIC;
         eosAuth.login(
@@ -258,6 +292,13 @@ public class EpicPlatformManager implements PlatformManager {
             eosStats = eosPlatform.getStatsHandle();
         } catch (EOSException e) {
             Gdx.app.error("EpicPlatformManager", "Failed to get EOS Stats handle", e);
+            return;
+        }
+
+        try {
+            eosLeaderboards = eosPlatform.getLeaderboardsHandle();
+        } catch (EOSException e) {
+            Gdx.app.error("EpicPlatformManager", "Failed to get EOS Leaderboards handle", e);
             return;
         }
 
