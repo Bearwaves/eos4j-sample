@@ -14,12 +14,14 @@ import com.badlogic.gdx.utils.StringBuilder;
 import com.bearwaves.eos4jsample.GdxGame;
 import com.bearwaves.eos4jsample.LoginState;
 import com.bearwaves.eos4jsample.leaderboards.LeaderboardDefinition;
+import com.bearwaves.eos4jsample.leaderboards.LeaderboardRecord;
 
 public class LeaderboardsScreen extends ContentScreen {
 
     private final Table sidebar;
     private final Table content;
     private final Label infoLabel;
+    private final Table ranks;
 
     public LeaderboardsScreen(GdxGame game, Container<ContentScreen> container, Skin skin) {
         super(game, container, skin, "Leaderboards");
@@ -27,12 +29,17 @@ public class LeaderboardsScreen extends ContentScreen {
         this.sidebar.setBackground(skin.newDrawable("white", Color.BLACK));
         this.sidebar.align(Align.topLeft);
         this.content = new Table(skin);
+        this.content.align(Align.top);
         this.infoLabel = new Label("Fetching leaderboards...", skin);
+        this.ranks = new Table(skin);
+        this.ranks.align(Align.topLeft);
+        this.ranks.defaults().space(Value.percentHeight(0.2f));
 
         this.add(sidebar).minWidth(Value.percentWidth(0.2f)).fill();
         this.add(content).grow();
 
-        content.add(infoLabel).expand();
+        content.add(infoLabel).row();
+        content.add(ranks).pad(Value.percentWidth(0.1f)).grow();
     }
 
     @Override
@@ -54,16 +61,33 @@ public class LeaderboardsScreen extends ContentScreen {
                 button.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
+                        ranks.clearChildren();
                         StringBuilder builder = new StringBuilder();
                         builder.append("Leaderboard: ").appendLine(definition.id);
                         builder.append("Stat: ").appendLine(definition.statName);
                         builder.append("Start time: ").appendLine(definition.startTime.toString());
                         builder.append("End time: ").appendLine(definition.endTime.toString());
                         infoLabel.setText(builder.toString());
+                        doFetchLeaderboard(definition.id);
                     }
                 });
                 sidebar.add(button).pad(Value.percentWidth(0.1f));
                 sidebar.row();
+            }
+        });
+    }
+
+    private void doFetchLeaderboard(String id) {
+        getGame().getPlatform().getLeaderboardRanks(id, result -> {
+            if (result == null) {
+                infoLabel.setText("Something went wrong fetching leaderboard - see logs.");
+                return;
+            }
+            for (LeaderboardRecord record : result.records) {
+                ranks.add(new Label(record.rank + ".", getSkin()));
+                ranks.add(new Label(record.displayName, getSkin()));
+                ranks.add(new Label(": " + record.score, getSkin()));
+                ranks.row();
             }
         });
     }

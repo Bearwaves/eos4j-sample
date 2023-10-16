@@ -12,7 +12,9 @@ import com.bearwaves.eos4j.EOSPlatform;
 import com.bearwaves.eos4j.EOSResultCode;
 import com.bearwaves.eos4j.EOSStats;
 import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardDefinitionsCallback;
+import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardRanksCallback;
 import com.bearwaves.eos4jsample.leaderboards.LeaderboardDefinition;
+import com.bearwaves.eos4jsample.leaderboards.LeaderboardRecord;
 import com.bearwaves.eos4jsample.stats.IngestStatCallback;
 import com.bearwaves.eos4jsample.stats.Stat;
 import com.bearwaves.eos4jsample.stats.GetStatsCallback;
@@ -191,6 +193,38 @@ public class EpicPlatformManager implements PlatformManager {
                         }
                     }
                     callback.run(new GetLeaderboardDefinitionsCallback.Result(defs));
+                }
+        );
+    }
+
+    @Override
+    public void getLeaderboardRanks(String leaderboardId, GetLeaderboardRanksCallback callback) {
+        eosLeaderboards.queryLeaderboardRanks(
+                new EOSLeaderboards.QueryLeaderboardRanksOptions(leaderboardId, this.localUserId),
+                result -> {
+                    try {
+                        EOS.throwIfErrorCode(result.resultCode);
+                    } catch (EOSException e) {
+                        Gdx.app.error("EpicPlatformManager", "Failed to query leaderboard ranks", e);
+                        callback.run(null);
+                        return;
+                    }
+                    int numRecords = eosLeaderboards.getLeaderboardRecordCount();
+                    LeaderboardRecord[] records = new LeaderboardRecord[numRecords];
+                    for (int i = 0; i < numRecords; i++) {
+                        try {
+                            EOSLeaderboards.LeaderboardRecord record = eosLeaderboards.copyLeaderboardRecordByIndex(
+                                    new EOSLeaderboards.CopyLeaderboardRecordByIndexOptions(i)
+                            );
+                            records[i] = new LeaderboardRecord(record.userDisplayName, record.rank, record.score);
+                            record.release();
+                        } catch (EOSException e) {
+                            Gdx.app.error("EpicPlatformManager", "Failed to copy leaderboard record", e);
+                            callback.run(null);
+                            return;
+                        }
+                    }
+                    callback.run(new GetLeaderboardRanksCallback.Result(records));
                 }
         );
     }
