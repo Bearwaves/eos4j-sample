@@ -14,6 +14,8 @@ public interface PlatformManager {
 
     LoginState getLoginState();
 
+    String getUserId();
+
     void getStats(GetStatsCallback callback);
 
     void ingestStat(Stat stat, IngestStatCallback callback);

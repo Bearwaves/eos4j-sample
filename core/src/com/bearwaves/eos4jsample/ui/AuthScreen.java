@@ -31,7 +31,7 @@ public class AuthScreen extends ContentScreen {
                 this.loadingLabel.setText("Login failed; see logs for details.");
                 break;
             case LOGGED_IN:
-                this.loadingLabel.setText("Logged in.");
+                this.loadingLabel.setText("Logged in.\nUser ID: " + getGame().getPlatform().getUserId());
                 break;
         }
     }

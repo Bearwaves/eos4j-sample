@@ -29,6 +29,7 @@ public class EpicPlatformManager implements PlatformManager {
     private EOSAuth.IdToken idToken;
     private EOSConnect.IdToken connectToken;
     private EOS.ProductUserId localUserId;
+    private String userIdString;
 
     EpicPlatformManager() {
         this.loginState = LoginState.NOT_LOGGED_IN;
@@ -107,6 +108,11 @@ public class EpicPlatformManager implements PlatformManager {
     @Override
     public LoginState getLoginState() {
         return this.loginState;
+    }
+
+    @Override
+    public String getUserId() {
+        return userIdString;
     }
 
     @Override
@@ -255,8 +261,15 @@ public class EpicPlatformManager implements PlatformManager {
             return;
         }
         Gdx.app.log("EpicPlatformManager", "EOS Connect successful");
-        this.loginState = LoginState.LOGGED_IN;
         this.localUserId = localUserId;
+        try {
+            this.userIdString = this.localUserId.stringValue();
+        } catch (EOSException e) {
+            Gdx.app.error("EpicPlatformManager", "Failed to get String representation of local user ID", e);
+            this.loginState = LoginState.FAILED;
+            return;
+        }
+        this.loginState = LoginState.LOGGED_IN;
         eosConnect.addNotifyAuthExpiration(data -> {
             Gdx.app.log("EpicPlatformManager", "Connect token expired; refreshing");
             doEOSConnectLogin();
