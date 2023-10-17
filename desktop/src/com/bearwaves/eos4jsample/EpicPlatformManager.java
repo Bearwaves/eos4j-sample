@@ -13,11 +13,17 @@ import com.bearwaves.eos4j.EOSResultCode;
 import com.bearwaves.eos4j.EOSStats;
 import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardDefinitionsCallback;
 import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardRanksCallback;
+import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardUserScoresCallback;
 import com.bearwaves.eos4jsample.leaderboards.LeaderboardDefinition;
 import com.bearwaves.eos4jsample.leaderboards.LeaderboardRecord;
+import com.bearwaves.eos4jsample.leaderboards.LeaderboardUserScore;
 import com.bearwaves.eos4jsample.stats.IngestStatCallback;
 import com.bearwaves.eos4jsample.stats.Stat;
 import com.bearwaves.eos4jsample.stats.GetStatsCallback;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class EpicPlatformManager implements PlatformManager {
 
@@ -225,6 +231,51 @@ public class EpicPlatformManager implements PlatformManager {
                         }
                     }
                     callback.run(new GetLeaderboardRanksCallback.Result(records));
+                }
+        );
+    }
+
+    @Override
+    public void getLeaderboardUserScores(LeaderboardDefinition[] definitions, GetLeaderboardUserScoresCallback callback) {
+        EOSLeaderboards.UserScoresQueryStatInfo[] info = new EOSLeaderboards.UserScoresQueryStatInfo[definitions.length];
+        for (int i = 0; i < definitions.length; i++) {
+            info[i] = new EOSLeaderboards.UserScoresQueryStatInfo(definitions[i].statName, EOSLeaderboards.Aggregation.values()[definitions[i].aggregation.ordinal()]);
+        }
+        eosLeaderboards.queryLeaderboardUserScores(
+                new EOSLeaderboards.QueryLeaderboardUserScoresOptions(
+                        new EOS.ProductUserId[]{localUserId},
+                        info,
+                        null, null,
+                        localUserId
+                ),
+                result -> {
+                    try {
+                        EOS.throwIfErrorCode(result.resultCode);
+                    } catch (EOSException e) {
+                        Gdx.app.error("EpicPlatformManager", "Failed to query user scores", e);
+                        callback.run(null);
+                        return;
+                    }
+                    HashMap<String, List<LeaderboardUserScore>> scores = new HashMap<>();
+                    for (LeaderboardDefinition definition : definitions) {
+                        ArrayList<LeaderboardUserScore> scoresList = new ArrayList<>();
+                        int userScoresCount = eosLeaderboards.getLeaderboardUserScoreCount(new EOSLeaderboards.GetLeaderboardUserScoreCountOptions(definition.statName));
+                        for (int i = 0; i < userScoresCount; i++) {
+                            try {
+                                EOSLeaderboards.LeaderboardUserScore score = eosLeaderboards.copyLeaderboardUserScoreByIndex(
+                                        new EOSLeaderboards.CopyLeaderboardUserScoreByIndexOptions(i, definition.statName)
+                                );
+                                scoresList.add(new LeaderboardUserScore(score.userId.stringValue(), score.score));
+                                score.release();
+                            } catch (EOSException e) {
+                                Gdx.app.error("EpicPlatformManager", "Failed to copy user score", e);
+                                callback.run(null);
+                                return;
+                            }
+                        }
+                        scores.put(definition.statName, scoresList);
+                    }
+                    callback.run(new GetLeaderboardUserScoresCallback.Result(scores));
                 }
         );
     }

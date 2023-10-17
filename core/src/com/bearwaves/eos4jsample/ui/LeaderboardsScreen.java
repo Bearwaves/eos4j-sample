@@ -15,11 +15,14 @@ import com.bearwaves.eos4jsample.GdxGame;
 import com.bearwaves.eos4jsample.LoginState;
 import com.bearwaves.eos4jsample.leaderboards.LeaderboardDefinition;
 import com.bearwaves.eos4jsample.leaderboards.LeaderboardRecord;
+import com.bearwaves.eos4jsample.leaderboards.LeaderboardUserScore;
+
+import java.util.List;
+import java.util.Map;
 
 public class LeaderboardsScreen extends ContentScreen {
 
     private final Table sidebar;
-    private final Table content;
     private final Label infoLabel;
     private final Table ranks;
 
@@ -28,8 +31,8 @@ public class LeaderboardsScreen extends ContentScreen {
         this.sidebar = new Table(skin);
         this.sidebar.setBackground(skin.newDrawable("white", Color.BLACK));
         this.sidebar.align(Align.topLeft);
-        this.content = new Table(skin);
-        this.content.align(Align.top);
+        Table content = new Table(skin);
+        content.align(Align.top);
         this.infoLabel = new Label("Fetching leaderboards...", skin);
         this.ranks = new Table(skin);
         this.ranks.align(Align.topLeft);
@@ -74,6 +77,20 @@ public class LeaderboardsScreen extends ContentScreen {
                 sidebar.add(button).pad(Value.percentWidth(0.1f));
                 sidebar.row();
             }
+            getGame().getPlatform().getLeaderboardUserScores(result.definitions, userScoresResult -> {
+                if (userScoresResult == null) {
+                    return;
+                }
+                StringBuilder sb = new StringBuilder().appendLine("Fetched " + result.definitions.length + " leaderboards.");
+                sb.appendLine("\nUser scores:");
+                for (Map.Entry<String, List<LeaderboardUserScore>> scores : userScoresResult.userScores.entrySet()) {
+                    sb.appendLine(scores.getKey() + ": ");
+                    for (LeaderboardUserScore score : scores.getValue()) {
+                        sb.appendLine("  " + score.userId + ": " + score.score);
+                    }
+                }
+                infoLabel.setText(sb.toString());
+            });
         });
     }
 
