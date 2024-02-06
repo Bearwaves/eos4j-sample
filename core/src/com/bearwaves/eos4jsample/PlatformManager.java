@@ -1,5 +1,6 @@
 package com.bearwaves.eos4jsample;
 
+import com.bearwaves.eos4jsample.ecom.GetOffersCallback;
 import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardDefinitionsCallback;
 import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardRanksCallback;
 import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardUserScoresCallback;
@@ -29,4 +30,5 @@ public interface PlatformManager {
 
     void getLeaderboardUserScores(LeaderboardDefinition[] definitions, GetLeaderboardUserScoresCallback callback);
 
+    void getOffers(GetOffersCallback callback);
 }

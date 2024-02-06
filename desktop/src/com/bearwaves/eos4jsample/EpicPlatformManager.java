@@ -5,12 +5,15 @@ import com.bearwaves.eos4j.EOS;
 import com.bearwaves.eos4j.EOSAchievements;
 import com.bearwaves.eos4j.EOSAuth;
 import com.bearwaves.eos4j.EOSConnect;
+import com.bearwaves.eos4j.EOSEcom;
 import com.bearwaves.eos4j.EOSException;
 import com.bearwaves.eos4j.EOSLeaderboards;
 import com.bearwaves.eos4j.EOSLogging;
 import com.bearwaves.eos4j.EOSPlatform;
 import com.bearwaves.eos4j.EOSResultCode;
 import com.bearwaves.eos4j.EOSStats;
+import com.bearwaves.eos4jsample.ecom.GetOffersCallback;
+import com.bearwaves.eos4jsample.ecom.Offer;
 import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardDefinitionsCallback;
 import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardRanksCallback;
 import com.bearwaves.eos4jsample.leaderboards.GetLeaderboardUserScoresCallback;
@@ -24,6 +27,7 @@ import com.bearwaves.eos4jsample.stats.GetStatsCallback;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class EpicPlatformManager implements PlatformManager {
 
@@ -34,9 +38,11 @@ public class EpicPlatformManager implements PlatformManager {
     private EOSStats eosStats;
     private EOSLeaderboards eosLeaderboards;
     private EOSAchievements eosAchievements;
+    private EOSEcom eosEcom;
     private EOSAuth.IdToken idToken;
     private EOSConnect.IdToken connectToken;
     private EOS.ProductUserId localUserId;
+    private EOS.EpicAccountId epicAccountId;
     private String userIdString;
 
     EpicPlatformManager() {
@@ -280,6 +286,78 @@ public class EpicPlatformManager implements PlatformManager {
         );
     }
 
+    @Override
+    public void getOffers(GetOffersCallback callback) {
+        Gdx.app.log("EpicPlatformManager", "Num transactions: " + eosEcom.getTransactionCount(new EOSEcom.GetTransactionCountOptions(epicAccountId)));
+
+        eosEcom.queryOffers(new EOSEcom.QueryOffersOptions(
+                epicAccountId,
+                null
+        ), callbackInfo -> {
+            try {
+                EOS.throwIfErrorCode(callbackInfo.resultCode);
+            } catch (EOSException e) {
+                Gdx.app.error("EpicPlatformManager", "Failed to query offers", e);
+                callback.run(null);
+                return;
+            }
+            int offerCount = eosEcom.getOfferCount(new EOSEcom.GetOfferCountOptions(epicAccountId));
+            String[] offerIds = new String[offerCount];
+            Map<String, Offer> offersById = new HashMap<>();
+            Gdx.app.log("EpicPlatformManager", "Found " + offerCount + " offers.");
+            for (int i = 0; i < offerCount; i++) {
+                try {
+                    EOSEcom.CatalogOffer offer = eosEcom.copyOfferByIndex(new EOSEcom.CopyOfferByIndexOptions(epicAccountId, i));
+                    EOS.throwIfErrorCode(offer.priceResult);
+                    Gdx.app.log("EpicPlatformManager", "Found offer: " + offer.titleText + ": " + offer.id);
+                    offerIds[i] = offer.id;
+                    float cost = (float) (offer.currentPrice / (Math.pow(10, offer.decimalPoint)));
+                    offersById.put(offer.id, new Offer(
+                            offer.id, offer.titleText, offer.descriptionText, offer.longDescriptionText, cost + offer.currencyCode, offer.releaseDate, false
+                    ));
+                    offer.release();
+                } catch (EOSException e) {
+                    Gdx.app.error("EpicPlatformManager", "Failed to copy offer", e);
+                    callback.run(null);
+                    return;
+                }
+            }
+
+            eosEcom.queryOwnership(
+                    new EOSEcom.QueryOwnershipOptions(epicAccountId, offerIds, null),
+                    ownershipCallbackData -> {
+                        try {
+                            EOS.throwIfErrorCode(ownershipCallbackData.resultCode);
+                        } catch (EOSException e) {
+                            Gdx.app.error("EpicPlatformManager", "Failed to query ownership", e);
+                            callback.run(null);
+                            return;
+                        }
+                        for (EOSEcom.ItemOwnership ownership : ownershipCallbackData.itemOwnerships) {
+                            if (ownership.ownershipStatus == EOSEcom.OwnershipStatus.OWNED) {
+                                offersById.get(ownership.id).owned = true;
+                            }
+                        }
+                        Gdx.app.log("EpicPlatformManager", "Queried ownership successfully.");
+                        eosEcom.queryOwnershipToken(
+                                new EOSEcom.QueryOwnershipTokenOptions(epicAccountId, offerIds, null),
+                                tokenCallback -> {
+                                    try {
+                                        EOS.throwIfErrorCode(tokenCallback.resultCode);
+                                    } catch (EOSException e) {
+                                        Gdx.app.error("EpicPlatformManager", "Failed to query ownership token", e);
+                                        callback.run(null);
+                                        return;
+                                    }
+                                    Gdx.app.log("EpicPlatformManager", "Got ownership token: " + tokenCallback.ownershipToken);
+                                    callback.run(new GetOffersCallback.Result(offersById.values().toArray(new Offer[]{})));
+                                }
+                        );
+                    }
+            );
+        });
+    }
+
     private void doEpicAuthLogin() {
         loginState = LoginState.LOGGING_IN_EPIC;
         eosAuth.login(
@@ -295,6 +373,7 @@ public class EpicPlatformManager implements PlatformManager {
                         loginState = LoginState.FAILED;
                         return;
                     }
+                    epicAccountId = callbackInfo.selectedAccountId;
                     Gdx.app.log("EpicPlatformManager", "Login success");
                     loginState = LoginState.LOGGING_IN_CONNECT;
                     try {
@@ -404,6 +483,12 @@ public class EpicPlatformManager implements PlatformManager {
             eosAchievements = eosPlatform.getAchievementsHandle();
         } catch (EOSException e) {
             Gdx.app.error("EpicPlatformManager", "Failed to get EOS Achievements handle", e);
+        }
+
+        try {
+            eosEcom = eosPlatform.getEcomHandle();
+        } catch (EOSException e) {
+            Gdx.app.error("EpicPlatformManager", "Failed to get EOS Ecom handle", e);
         }
     }
 }
